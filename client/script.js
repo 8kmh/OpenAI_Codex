@@ -25,7 +25,7 @@ const typeText = (element, text) => {
 
   let interval = setInterval(() => {
     if (index < text.length) {
-      element.innerHTML += text.chartAt(index);
+      element.innerHTML += text.charAt(index);
       index++;
     } else {
       clearInterval(interval);
@@ -42,6 +42,7 @@ const generateUniqueId = () => {
   return `id-${timestamp}-${hexadecimanString}`;
 };
 
+// Fonction qui affiche le "HTML" du chat
 const chatStripe = (isAi, value, uniqueId) => {
   return `
     <div class="wrapper ${isAi && "ai"}">
@@ -74,11 +75,38 @@ const handleSubmit = async (e) => {
   const messageDiv = document.getElementById(uniqueId);
 
   loader(messageDiv);
+
+  // Fetch data from the server -> bot's response
+  const response = await fetch("https://localhost:5000", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: data.get("prompt"),
+    }),
+  });
+
+  clearInterval(loadInterval);
+  messageDiv.innerHTML = "";
+
+  if (response.ok) {
+    const data = await response.json();
+    const parsedData = data.bot.trim();
+
+    typeText(messageDiv, parsedData);
+  } else {
+    const err = await response.text();
+
+    messageDiv.innerHTML =
+      "Une erreur est survenue, veuillez essayer dans quelques instant";
+    alert(err);
+  }
 };
 
 form.addEventListener("submit", handleSubmit);
 form.addEventListener("keyup", (e) => {
-  if (e.keycode === 13) {
+  if (e.keyCode === 13) {
     handleSubmit(e);
   }
 });
